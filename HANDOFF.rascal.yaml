@@ -1,0 +1,66 @@
+project: rascal
+updated: 2026-04-13
+
+notes: >
+  Semantic code linter for Rust. Parses .rs files into chunks via tree-sitter-rust,
+  scores each chunk against a corpus of golden idiomatic examples using cosine
+  similarity. StubEmbedder active until issue #1 (OpenAI-compatible embedder) lands —
+  all scores currently 0.0 / passing. SQLite corpus via rusqlite. CLI: check, index,
+  corpus list/clear.
+
+items:
+  - id: rascal-1
+    title: OpenAI-compatible embedder adapter
+    priority: P1
+    status: open
+    description: >
+      Implement the Embedder port with an HTTP adapter calling any OpenAI-compatible
+      /v1/embeddings endpoint. Config via RASCAL_API_URL, RASCAL_API_KEY, RASCAL_MODEL
+      env vars or ~/.config/rascal/config.toml. Error mapping must stay at adapter
+      boundary. embed_batch should chunk large inputs. Pre-compute corpus embeddings
+      at index time and store as BLOBs — only re-embed on corpus change.
+      See: https://github.com/89jobrien/rascal/issues/1
+    files:
+      - src/embedder.rs
+      - src/corpus.rs
+
+  - id: rascal-2
+    title: Seed corpus from existing projects
+    priority: P2
+    status: open
+    description: >
+      Run rascal index --from on devloop, doob, fmtx, slash, rascal itself to build
+      an initial golden corpus from the author's established hexagonal Rust patterns.
+      Depends on rascal-1 (embedder) to produce meaningful scores.
+    files: []
+
+  - id: rascal-3
+    title: delta_hint — structural diff against nearest match
+    priority: P2
+    status: open
+    description: >
+      Populate ChunkResult.delta_hint with a short description of how the chunk
+      structurally differs from its nearest corpus match (e.g. "error mapping leaks
+      reqwest types into domain"). Requires embedder + a diff/reasoning step.
+    files:
+      - src/scorer.rs
+      - src/domain.rs
+
+  - id: rascal-4
+    title: Wire into fmtx as .rs formatter/checker
+    priority: P2
+    status: open
+    description: >
+      Add rascal check alongside rustfmt for .rs files in the fmtx pipeline. Either
+      via a fmtrs wrapper script or fmtx multi-command support (fmtx-1). Meaningful
+      only after rascal-1 and rascal-2 are done.
+    files:
+      - ~/.config/fmtx/config.toml
+
+log:
+  - date: 2026-04-13
+    summary: >
+      Initial implementation shipped — tree-sitter chunker (function/impl/trait/struct/
+      enum), SQLite corpus with deferred embeddings schema, StubEmbedder, cosine scorer,
+      comfy-table + JSON output, CLI (check/index/corpus), 18 tests passing.
+    commits: [d2df0a9]
